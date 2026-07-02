@@ -1,10 +1,20 @@
-name: Schedule Nestle Instagram Reel
+name: Schedule Instagram & Facebook Reels
 
 on:
   schedule:
-    # Runs at 16:23 UTC (21:53 IST) on 2 July 2026
-    - cron: '23 16 2 7 *'
-  workflow_dispatch: # Allows manual run via GitHub UI
+    # Morning Slot (5:30 AM IST / 00:00 UTC) from 12 July to 18 July
+    - cron: '0 0 12-18 7 *'
+    # Afternoon Slot (1:30 PM IST / 08:00 UTC) from 12 July to 18 July
+    - cron: '0 8 12-18 7 *'
+    # Night Slot (10:30 PM IST / 17:00 UTC) from 12 July to 18 July
+    - cron: '0 17 12-18 7 *'
+  
+  workflow_dispatch: # Allows manual run via GitHub UI with custom index
+    inputs:
+      post_index:
+        description: 'Optional: Override Post Index to publish immediately (e.g. 25)'
+        required: false
+        default: ''
 
 jobs:
   publish:
@@ -29,4 +39,10 @@ jobs:
           FACEBOOK_USER_ACCESS_TOKEN: ${{ secrets.FACEBOOK_USER_ACCESS_TOKEN }}
           FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
           INSTAGRAM_BUSINESS_ACCOUNT_ID: ${{ secrets.INSTAGRAM_BUSINESS_ACCOUNT_ID }}
-        run: python publish_instagram_reel.py
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+        run: |
+          if [ -n "${{ github.event.inputs.post_index }}" ]; then
+            python publish_instagram_reel.py --idx ${{ github.event.inputs.post_index }}
+          else
+            python publish_instagram_reel.py
+          fi
