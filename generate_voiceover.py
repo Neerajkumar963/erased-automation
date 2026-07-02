@@ -9,6 +9,7 @@ import subprocess
 import sys
 import urllib.request
 import urllib.parse
+import requests
 from PIL import Image, ImageDraw, ImageFont
 
 # Add scripts directory to path to import modules
@@ -73,6 +74,84 @@ def parse_elevenlabs_alignment(alignment, speed_factor=1.12):
         })
         
     return words
+
+def get_dropbox_access_token(app_key, app_secret, refresh_token):
+    print("Getting a fresh access token from Dropbox...")
+    url = "https://api.dropboxapi.com/oauth2/token"
+    data = {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token
+    }
+    resp = requests.post(url, data=data, auth=(app_key, app_secret))
+    resp.raise_for_status()
+    return resp.json()["access_token"]
+
+def upload_to_dropbox(file_path, dbx_path, access_token):
+    print(f"Uploading {file_path} to Dropbox {dbx_path}...")
+    url = "https://content.dropboxapi.com/2/files/upload"
+    
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Dropbox-API-Arg": json.dumps({
+            "path": dbx_path,
+            "mode": "overwrite",
+            "autorename": False,
+            "mute": False,
+            "strict_conflict": False
+        }),
+        "Content-Type": "application/octet-stream"
+    }
+    
+    with open(file_path, "rb") as f:
+        file_data = f.read()
+        
+    resp = requests.post(url, headers=headers, data=file_data)
+    if resp.status_code != 200:
+        print("Dropbox upload failed with response:", resp.status_code, resp.text)
+    resp.raise_for_status()
+    print("Upload completed successfully!")
+    return resp.json()
+
+def get_or_create_shared_link(dbx_path, access_token):
+    print(f"Creating shared link for {dbx_path}...")
+    url = "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "path": dbx_path,
+        "settings": {
+            "requested_visibility": "public"
+        }
+    }
+    
+    resp = requests.post(url, headers=headers, json=payload)
+    if resp.status_code == 200:
+        link_url = resp.json()["url"]
+        print(f"Created shared link: {link_url}")
+        return link_url
+    else:
+        # Check if it failed because it already exists
+        error_data = resp.json()
+        error_summary = error_data.get("error_summary", "")
+        if "shared_link_already_exists" in error_summary or resp.status_code == 409:
+            print("Shared link already exists. Fetching existing link...")
+            url_list = "https://api.dropboxapi.com/2/sharing/list_shared_links"
+            payload_list = {
+                "path": dbx_path,
+                "direct_only": True
+            }
+            resp_list = requests.post(url_list, headers=headers, json=payload_list)
+            resp_list.raise_for_status()
+            links = resp_list.json().get("links", [])
+            if links:
+                link_url = links[0]["url"]
+                print(f"Found existing shared link: {link_url}")
+                return link_url
+        
+        # If it failed for some other reason, raise
+        resp.raise_for_status()
 
 def main():
     load_env()
@@ -389,6 +468,55 @@ def main():
             os.remove(fast_audio_path)
         except Exception:
             pass
+            
+        # 6. Upload generated assets to Dropbox and create publish configuration
+        app_key = os.environ.get("DROPBOX_APP_KEY")
+        app_secret = os.environ.get("DROPBOX_APP_SECRET")
+        refresh_token = os.environ.get("DROPBOX_REFRESH_TOKEN")
+        
+        if app_key and app_secret and refresh_token:
+            print("\nDropbox configuration found. Uploading generated assets to Dropbox...")
+            try:
+                # Get access token
+                access_token = get_dropbox_access_token(app_key, app_secret, refresh_token)
+                
+                # Upload video
+                dbx_video_path = f"/{args.name}_{current_idx}_video.mp4"
+                upload_to_dropbox(video_output, dbx_video_path, access_token)
+                video_shared_link = get_or_create_shared_link(dbx_video_path, access_token)
+                video_direct_url = video_shared_link.replace("dl=0", "dl=1")
+                
+                # Upload thumbnail if it exists
+                thumb_output = os.path.join(args.output_dir, f"{args.name}_{current_idx}_thumb.jpg")
+                thumb_direct_url = ""
+                if os.path.exists(thumb_output):
+                    dbx_thumb_path = f"/{args.name}_{current_idx}_thumb.jpg"
+                    upload_to_dropbox(thumb_output, dbx_thumb_path, access_token)
+                    thumb_shared_link = get_or_create_shared_link(dbx_thumb_path, access_token)
+                    thumb_direct_url = thumb_shared_link.replace("dl=0", "dl=1")
+                else:
+                    print(f"Warning: Thumbnail file {thumb_output} not found. Skipping thumbnail upload.")
+                
+                # Create cleaned caption (with heading uppercase and body hashtags)
+                clean_heading = clean_text(heading).upper()
+                clean_body = clean_text(raw_body)
+                caption = f"{clean_heading}\n\n{clean_body}\n\n#HiddenHistory #TrueHistory #HistoryFacts #HistoryReels #Automation"
+                
+                # Write publish_config.json
+                publish_config = {
+                    "post_index": current_idx,
+                    "video_url": video_direct_url,
+                    "thumb_url": thumb_direct_url,
+                    "caption": caption
+                }
+                
+                config_path = "publish_config.json"
+                with open(config_path, "w", encoding="utf-8") as cf:
+                    json.dump(publish_config, cf, indent=2, ensure_ascii=False)
+                print(f"Success! Configuration written successfully to: {os.path.abspath(config_path)}")
+                
+            except Exception as e:
+                print(f"Warning: Dropbox upload or publish config creation failed: {e}", file=sys.stderr)
             
     print("\n========================================")
     print("All perfect-sync voiceover videos compiled successfully!")
