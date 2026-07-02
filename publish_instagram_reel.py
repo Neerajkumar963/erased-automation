@@ -21,11 +21,12 @@ def upload_to_tmpfiles(file_path):
 
 def main():
     # Read variables from environment (will be set by GitHub Secrets)
-    token = os.environ.get("FACEBOOK_PAGE_ACCESS_TOKEN")
+    # Using User Access Token here to bypass the whitelist error
+    token = os.environ.get("FACEBOOK_USER_ACCESS_TOKEN") or os.environ.get("FACEBOOK_PAGE_ACCESS_TOKEN")
     ig_id = os.environ.get("INSTAGRAM_BUSINESS_ACCOUNT_ID")
     
     if not token or not ig_id:
-        print("Error: Missing FACEBOOK_PAGE_ACCESS_TOKEN or INSTAGRAM_BUSINESS_ACCOUNT_ID in environment!", file=sys.stderr)
+        print("Error: Missing FACEBOOK_USER_ACCESS_TOKEN or INSTAGRAM_BUSINESS_ACCOUNT_ID in environment!", file=sys.stderr)
         sys.exit(1)
         
     video_path = "outputs/erased_post_21_video.mp4"
