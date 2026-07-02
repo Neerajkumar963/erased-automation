@@ -2,8 +2,8 @@ name: Schedule Nestle Instagram Reel
 
 on:
   schedule:
-    # Runs at 17:05 UTC (22:35 IST) on 11 July 2026
-    - cron: '5 17 11 7 *'
+    # Runs at 16:23 UTC (21:53 IST) on 2 July 2026
+    - cron: '23 16 2 7 *'
   workflow_dispatch: # Allows manual run via GitHub UI
 
 jobs:
