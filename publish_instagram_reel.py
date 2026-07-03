@@ -74,66 +74,10 @@ def get_scheduled_post_index():
         
     return post_index
 
-def publish_to_facebook_page(video_url, caption):
-    page_id = os.environ.get("FACEBOOK_PAGE_ID")
-    token = os.environ.get("FACEBOOK_PAGE_ACCESS_TOKEN")
-    if not page_id or not token:
-        print("Warning: Missing FACEBOOK_PAGE_ID or FACEBOOK_PAGE_ACCESS_TOKEN in env! Skipping Facebook publish.")
-        return
-        
-    print("\n-------------------- [Publishing to Facebook Page Reels] --------------------")
-    
-    # Step 1: Start upload session
-    url_start = f"https://graph.facebook.com/v20.0/{page_id}/video_reels"
-    payload_start = {
-        "upload_phase": "start",
-        "access_token": token
-    }
-    try:
-        resp_start = requests.post(url_start, data=payload_start).json()
-        print("Facebook Start Session Response:", json.dumps(resp_start, indent=2))
-        if "video_id" not in resp_start:
-            print("Error: Failed to initialize Facebook video upload session.")
-            return
-        video_id = resp_start["video_id"]
-        
-        # Step 2: Upload file from public URL (Dropbox direct link)
-        url_upload = f"https://rupload.facebook.com/video-reels-upload/{video_id}"
-        headers_upload = {
-            "Authorization": f"OAuth {token}",
-            "file_url": video_url
-        }
-        print("Uploading video URL to Facebook Page...")
-        resp_upload = requests.post(url_upload, headers=headers_upload).json()
-        print("Facebook Upload Response:", json.dumps(resp_upload, indent=2))
-        if not resp_upload.get("success", False):
-            print("Error: Facebook upload failed.")
-            return
-            
-        # Step 3: Finish and Publish
-        url_finish = f"https://graph.facebook.com/v20.0/{page_id}/video_reels"
-        payload_finish = {
-            "upload_phase": "finish",
-            "access_token": token,
-            "video_id": video_id,
-            "video_state": "PUBLISHED",
-            "description": caption
-        }
-        print("Publishing Reel on Facebook Page...")
-        resp_finish = requests.post(url_finish, data=payload_finish).json()
-        print("Facebook Publish Response:", json.dumps(resp_finish, indent=2))
-        if resp_finish.get("success", False) or "video_id" in resp_finish:
-            print(f"SUCCESS! Post is now live on Facebook Page! Video ID: {video_id}")
-        else:
-            print(f"Error: Publishing on Facebook Page failed: {resp_finish}")
-            
-    except Exception as e:
-        print(f"Error during Facebook Page upload/publish: {e}")
-
 def main():
     load_env()
     
-    parser = argparse.ArgumentParser(description="Instagram & Facebook Reels Auto Publisher")
+    parser = argparse.ArgumentParser(description="Instagram Reels Auto Publisher")
     parser.add_argument("--idx", type=int, help="Override index to run manually")
     args = parser.parse_args()
     
@@ -150,14 +94,14 @@ def main():
         print(f"Manual Override: Processing Post {target_idx}")
     else:
         target_idx = get_scheduled_post_index()
+        # TEMPORARY TEST OVERRIDE FOR JULY 3rd
         if target_idx is None:
-            print("No post scheduled for this slot. Exiting cleanly.")
-            sys.exit(0)
+            print("TEMPORARY TEST OVERRIDE: Defaulting to Post 22 for July 3rd test.")
+            target_idx = 22
             
-        # Apply anti-bot random delay (0 to 600 seconds)
-        delay_sec = random.randint(0, 600)
-        print(f"Sleeping for {delay_sec} seconds to prevent bot flags...")
-        time.sleep(delay_sec)
+        # Set delay to 0 for quick verification during testing
+        delay_sec = 0
+        print(f"Test mode: Skipping random delay...")
         
     # Load assets from scheduled_posts.json
     db_path = "scheduled_posts.json"
@@ -190,7 +134,7 @@ def main():
             print("Error: No scheduled database or configuration file found!", file=sys.stderr)
             sys.exit(1)
             
-    print(f"\n==================== [Publishing Post {target_idx}] ====================")
+    print(f"\n==================== [Publishing Post {target_idx} to Instagram] ====================")
     print(f"Video URL: {video_url}")
     print(f"Thumb URL: {thumb_url}")
     
@@ -257,12 +201,6 @@ def main():
             
     except Exception as e:
         print(f"Error during Instagram workflow: {e}", file=sys.stderr)
-        
-    # -------------------- FACEBOOK PUBLISHING --------------------
-    try:
-        publish_to_facebook_page(video_url, caption)
-    except Exception as e:
-        print(f"Error during Facebook workflow: {e}", file=sys.stderr)
 
 if __name__ == "__main__":
     main()
