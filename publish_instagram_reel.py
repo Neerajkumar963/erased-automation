@@ -94,14 +94,14 @@ def main():
         print(f"Manual Override: Processing Post {target_idx}")
     else:
         target_idx = get_scheduled_post_index()
-        # TEMPORARY TEST OVERRIDE FOR JULY 3rd
         if target_idx is None:
-            print("TEMPORARY TEST OVERRIDE: Defaulting to Post 22 for July 3rd test.")
-            target_idx = 22
+            print("No post scheduled for this slot. Exiting cleanly.")
+            sys.exit(0)
             
-        # Set delay to 0 for quick verification during testing
-        delay_sec = 0
-        print(f"Test mode: Skipping random delay...")
+        # Apply anti-bot random delay (0 to 600 seconds)
+        delay_sec = random.randint(0, 600)
+        print(f"Sleeping for {delay_sec} seconds to prevent bot flags...")
+        time.sleep(delay_sec)
         
     # Load assets from scheduled_posts.json
     db_path = "scheduled_posts.json"
