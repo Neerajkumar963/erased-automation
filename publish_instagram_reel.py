@@ -45,8 +45,8 @@ def get_scheduled_post_index():
     
     days_diff = (current_date - start_date).days
     if days_diff < 0:
-        print("Schedule has not started yet (before July 12th). OVERRIDING TO POST 22 FOR TEST.")
-        return 22
+        print("Schedule has not started yet (before July 12th).")
+        return None
         
     # Slot detection (IST hour blocks)
     # Slot 1: Morning (around 5:30 AM). Accept range: hour 5 to 7

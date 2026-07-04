@@ -4,8 +4,6 @@ on:
   repository_dispatch:
     types: [schedule_trigger]
   schedule:
-    # Temporary test cron for 5:05 PM IST / 11:35 AM UTC on July 4th
-    - cron: '35 11 4 7 *'
     # Morning Slot (5:30 AM IST / 00:00 UTC) from 12 July to 18 July
     - cron: '0 0 12-18 7 *'
     # Afternoon Slot (1:30 PM IST / 08:00 UTC) from 12 July to 18 July
