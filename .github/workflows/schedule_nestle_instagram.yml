@@ -44,7 +44,7 @@ jobs:
           FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
         run: |
           if [ -n "${{ github.event.inputs.post_index }}" ]; then
-            python publish_instagram_reel.py --idx ${{ github.event.inputs.post_index }}
+            python -u publish_instagram_reel.py --idx ${{ github.event.inputs.post_index }}
           else
-            python publish_instagram_reel.py
+            python -u publish_instagram_reel.py
           fi
