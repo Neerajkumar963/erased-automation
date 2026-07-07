@@ -156,7 +156,27 @@ def main():
         print(json.dumps(resp_pub, indent=2))
         
         if "id" in resp_pub:
-            print(f"\nSUCCESS! Reel is now live on Instagram! Post ID: {resp_pub['id']}")
+            media_id = resp_pub['id']
+            print(f"\nSUCCESS! Reel is now live on Instagram! Post ID: {media_id}")
+            
+            # --- ADDING COMMENT ---
+            print("\n-------------------- [Adding Caption as Comment] --------------------")
+            url_comment = f"https://graph.facebook.com/v20.0/{media_id}/comments"
+            payload_comment = {
+                "access_token": token,
+                "message": caption
+            }
+            
+            try:
+                resp_comment = requests.post(url_comment, data=payload_comment).json()
+                if "id" in resp_comment:
+                    print(f"SUCCESS! Comment added successfully! Comment ID: {resp_comment['id']}")
+                    print("Note: The Instagram API does not support pinning comments. Pinning must be done manually via the app.")
+                else:
+                    print(f"Error: Failed to add comment: {resp_comment}", file=sys.stderr)
+            except Exception as e:
+                print(f"Error while adding comment: {e}", file=sys.stderr)
+                
         else:
             print(f"\nError: Publishing container failed: {resp_pub}", file=sys.stderr)
             
