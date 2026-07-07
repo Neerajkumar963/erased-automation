@@ -10,6 +10,8 @@ on:
     - cron: '0 8 12-18 7 *'
     # Night Slot (10:30 PM IST / 17:00 UTC) from 12 July to 18 July
     - cron: '0 17 12-18 7 *'
+    # Image Slot (11:00 AM IST / 05:30 UTC) from 8 July to 17 July
+    - cron: '30 5 8-17 7 *'
   
   workflow_dispatch: # Allows manual run via GitHub UI with custom index
     inputs:
@@ -17,6 +19,10 @@ on:
         description: 'Optional: Override Post Index to publish immediately (e.g. 25)'
         required: false
         default: ''
+      post_type:
+        description: 'Optional: Type of post (reel or image)'
+        required: false
+        default: 'reel'
 
 jobs:
   publish:
@@ -44,7 +50,12 @@ jobs:
           FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
         run: |
           if [ -n "${{ github.event.inputs.post_index }}" ]; then
-            python -u publish_instagram_reel.py --idx ${{ github.event.inputs.post_index }}
+            if [ "${{ github.event.inputs.post_type }}" = "image" ]; then
+              python -u publish_instagram_image.py --idx ${{ github.event.inputs.post_index }}
+            else
+              python -u publish_instagram_reel.py --idx ${{ github.event.inputs.post_index }}
+            fi
           else
             python -u publish_instagram_reel.py
+            python -u publish_instagram_image.py
           fi

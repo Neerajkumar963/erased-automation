@@ -4,13 +4,13 @@ from PIL import Image, ImageDraw, ImageFont
 
 # Define Color Palette
 PALETTE = {
-    "default": (1, 1, 1),        # Near black
-    "red": (192, 0, 30),         # Crimson Red (#c0001e)
-    "orange": (1, 1, 1),         # Black instead of Teal (to keep design clean)
-    "teal": (1, 1, 1),           # Black instead of Teal
-    "amber": (245, 158, 11),     # Amber (#f59e0b)
+    "default": (18, 18, 18),     # #121212 (Dark Charcoal)
+    "red": (199, 54, 43),        # #C7362B (Mylan Red)
+    "orange": (227, 150, 115),   # #E39673 (Mylan Peach/Orange)
+    "teal": (12, 191, 176),      # #0CBFB0 (Legacy Teal)
+    "amber": (245, 158, 11),     # #F59E0B (Legacy Amber)
     "white": (255, 255, 255),
-    "bg": (248, 242, 230)        # Cream Canvas Background
+    "bg": (244, 240, 231)        # #F4F0E7 (Mylan Vintage Cream)
 }
 
 def parse_text(text):
@@ -65,8 +65,6 @@ def layout_paragraph(text, default_font_family, fonts, max_width):
             font = fonts['poppins_bold'] if is_bold else fonts['poppins_reg']
             
         color_name = style.get('color', 'default')
-        if color_name == 'default' and is_bold:
-            color_name = 'amber'
         color = PALETTE.get(color_name, PALETTE['default'])
         
         w_len = font.getlength(token)

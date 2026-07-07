@@ -49,7 +49,7 @@ def parse_elevenlabs_alignment(alignment, speed_factor=1.12):
     word_start = None
     
     for char, start, end in zip(characters, starts, ends):
-        if char.isspace() or char in ["—", "-", "/"]:
+        if char.isspace():
             if current_word_chars:
                 word_str = "".join(current_word_chars)
                 words.append({
@@ -263,78 +263,143 @@ def main():
         
         os.makedirs("scratch", exist_ok=True)
         temp_audio_path = os.path.join("scratch", f"voiceover_{current_idx}.mp3")
+        temp_json_path = os.path.join("scratch", f"voiceover_{current_idx}_alignment.json")
         
-        req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
-        try:
-            with urllib.request.urlopen(req) as resp_raw:
-                resp = json.loads(resp_raw.read().decode("utf-8"))
-            # Save raw audio file
-            audio_bytes = base64.b64decode(resp["audio_base64"])
-            with open(temp_audio_path, "wb") as f:
-                f.write(audio_bytes)
-            print(f"Saved raw voiceover audio to: {temp_audio_path}")
-        except Exception as e:
-            print(f"Error generating voiceover for Post {current_idx}: {e}", file=sys.stderr)
-            continue
+        if os.path.exists(temp_audio_path) and os.path.exists(temp_json_path):
+            print(f"Found cached audio and alignment for Post {current_idx}. Skipping API call to save credits!")
+            with open(temp_json_path, "r", encoding="utf-8") as f:
+                alignment_data = json.load(f)
+        else:
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
+            try:
+                with urllib.request.urlopen(req) as resp_raw:
+                    resp = json.loads(resp_raw.read().decode("utf-8"))
+                # Save raw audio file
+                audio_bytes = base64.b64decode(resp["audio_base64"])
+                with open(temp_audio_path, "wb") as f:
+                    f.write(audio_bytes)
+                # Save alignment data
+                alignment_data = resp["alignment"]
+                with open(temp_json_path, "w", encoding="utf-8") as f:
+                    json.dump(alignment_data, f)
+                print(f"Saved raw voiceover audio and alignment to: scratch/")
+            except Exception as e:
+                print(f"Error generating voiceover for Post {current_idx}: {e}", file=sys.stderr)
+                continue
             
-        # Parse alignment timings
-        spoken_words = parse_elevenlabs_alignment(resp["alignment"], speed_factor=1.12)
+        # Parse alignment timings (1.0 speed for mathematically perfect sync during render)
+        spoken_words = parse_elevenlabs_alignment(alignment_data, speed_factor=1.0)
         duration = spoken_words[-1]["end"] + 1.0 # 1s buffer at the end
         fps = 30
         total_frames = int(duration * fps)
         
-        # 2. Speed up audio using FFmpeg
+        # 2. Prepare audio (No speed up here, we speed up everything at the end)
         fast_audio_path = os.path.join("scratch", f"voiceover_{current_idx}_fast.mp3")
         if os.path.exists(fast_audio_path):
             try:
                 os.remove(fast_audio_path)
             except Exception:
                 pass
-        cmd_audio = f'"{ffmpeg_path}" -y -i "{temp_audio_path}" -filter:a "volume=2.0,atempo=1.12" "{fast_audio_path}"'
+        cmd_audio = f'"{ffmpeg_path}" -y -i "{temp_audio_path}" -filter:a "volume=2.0" "{fast_audio_path}"'
         subprocess.run(cmd_audio, shell=True, check=True)
         
-        # 3. Layout text paragraphs using renderer.py layout engine
-        fonts = {
-            "poppins_reg": ImageFont.truetype(os.path.join("fonts", "Poppins-Regular.ttf"), 68),
-            "poppins_bold": ImageFont.truetype(os.path.join("fonts", "Poppins-Bold.ttf"), 68),
-            "anton": ImageFont.truetype(os.path.join("fonts", "Anton-Regular.ttf"), 90)
-        }
+        # 3. Calculate Layout EXACTLY like renderer.py to sync with pre-rendered card
+        fonts = {}
         
-        raw_paragraphs = raw_body.split("\n\n")
-        max_width = 1592
-        
-        paragraphs_lines = []
-        for para in raw_paragraphs:
-            lines = layout_paragraph(para, "poppins", fonts, max_width)
-            paragraphs_lines.append(lines)
+        # Calculate Title Height to find Body Start Y
+        title_font_size = 120
+        while True:
+            fonts["anton"] = ImageFont.truetype(os.path.join("fonts", "Anton-Regular.ttf"), title_font_size)
+            title_lines = layout_paragraph(heading.upper(), "anton", fonts, 1592)
+            title_font_height = int(title_font_size * (108 / 120))
+            title_leading = int(title_font_size * (129 / 120))
+            h = (len(title_lines) - 1) * title_leading + title_font_height
+            if h <= 450 or title_font_size <= 70:
+                break
+            title_font_size -= 5
             
-        # Map spoken words to layout tokens
-        word_ptr = 0
+        title_end_y = 347
+        for i, para_lines in enumerate([title_lines]):
+            for j, line in enumerate(para_lines):
+                if i == 0 and j == len(para_lines) - 1:
+                    title_end_y += title_font_height
+                else:
+                    if j == len(para_lines) - 1:
+                        title_end_y += title_font_height
+                    else:
+                        title_end_y += title_leading
+
+        # Calculate Body Layout
+        body_font_size = 68
+        raw_paragraphs = raw_body.split("\n\n")
+        
+        while True:
+            fonts["poppins_reg"] = ImageFont.truetype(os.path.join("fonts", "Poppins-Regular.ttf"), body_font_size)
+            fonts["poppins_bold"] = ImageFont.truetype(os.path.join("fonts", "Poppins-Bold.ttf"), body_font_size)
+            
+            body_para_lines = [layout_paragraph(para, "poppins", fonts, 1592) for para in raw_paragraphs if para.strip()]
+            
+            body_font_height = int(body_font_size * (66 / 68))
+            body_leading = int(body_font_size * (94 / 68))
+            body_para_gap = int(body_font_size * (62 / 68))
+            
+            total_body_h = 0
+            for i, para in enumerate(body_para_lines):
+                para_h = (len(para) - 1) * body_leading + body_font_height
+                total_body_h += para_h
+                if i > 0:
+                    total_body_h += body_para_gap
+                    
+            body_start_y = title_end_y + 70
+            if body_start_y + total_body_h <= 2120 or body_font_size <= 40:
+                break
+            body_font_size -= 4
+
+        # Build char_timings from alignment_data
+        characters = alignment_data['characters']
+        starts = alignment_data['character_start_times_seconds']
+        ends = alignment_data['character_end_times_seconds']
+        char_timings = [{'char': c, 'start': s, 'end': e} for c, s, e in zip(characters, starts, ends)]
+
+        # Map spoken words to layout tokens using Character-to-Character mapping
+        char_ptr = 0
         words_layout_data = []
         
-        start_x = 100
-        start_y = 750
-        line_height = 105
-        paragraph_gap = 40
-        font_height = 80
-        
-        current_y = start_y
-        for p_idx, para_lines in enumerate(paragraphs_lines):
+        current_y = body_start_y
+        for i, para_lines in enumerate(body_para_lines):
             for j, line in enumerate(para_lines):
-                current_x = start_x
+                current_x = 100
                 for token, font, color, width in line:
                     clean_tok = re.sub(r'[^\w]', '', token.lower())
                     
                     x1 = current_x
                     y1 = current_y
                     x2 = current_x + width
-                    y2 = current_y + font_height
+                    y2 = current_y + body_font_height
                     
                     word_timing = None
-                    if clean_tok and word_ptr < len(spoken_words):
-                        word_timing = spoken_words[word_ptr]
-                        word_ptr += 1
+                    if clean_tok:
+                        match_idx = 0
+                        start_time = None
+                        end_time = None
+                        temp_ptr = char_ptr
                         
+                        while temp_ptr < len(char_timings) and match_idx < len(clean_tok):
+                            ct = char_timings[temp_ptr]
+                            clean_c = re.sub(r'[^\w]', '', ct['char'].lower())
+                            
+                            if clean_c:
+                                if clean_c == clean_tok[match_idx]:
+                                    if match_idx == 0:
+                                        start_time = ct['start']
+                                    end_time = ct['end']
+                                    match_idx += 1
+                            temp_ptr += 1
+                            
+                        if match_idx == len(clean_tok):
+                            char_ptr = temp_ptr
+                            word_timing = {"start": start_time, "end": end_time}
+                            
                     words_layout_data.append({
                         "token": token,
                         "font": font,
@@ -343,57 +408,31 @@ def main():
                         "y1": y1,
                         "x2": x2,
                         "y2": y2,
+                        "ascent": font.getmetrics()[0],
                         "timing": word_timing
                     })
                     current_x += width
                     
-                # Line leading
-                if p_idx == len(paragraphs_lines) - 1 and j == len(para_lines) - 1:
-                    current_y += font_height
+                if i == len(body_para_lines) - 1 and j == len(para_lines) - 1:
+                    current_y += body_font_height
                 else:
                     if j == len(para_lines) - 1:
-                        current_y += font_height + paragraph_gap
+                        current_y += body_font_height + body_para_gap
                     else:
-                        current_y += line_height
-                        
+                        current_y += body_leading
+
         # 4. Render Video Frames
         temp_video_raw = os.path.join("scratch", f"temp_video_{current_idx}.mp4")
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         video_writer = cv2.VideoWriter(temp_video_raw, fourcc, fps, (1792, 2400))
         
-        # Base canvas setup
-        base_img = Image.new("RGB", (1792, 2400), PALETTE["bg"])
-        draw_base = ImageDraw.Draw(base_img)
-        
-        # Paste header if exists
-        header_path = os.path.join("assets", "new_header_mockup.png")
-        if os.path.exists(header_path):
-            header_img = Image.open(header_path).convert("RGBA")
-            base_img.paste(header_img, (0, 58), header_img)
-            
-        # Draw Headline (wrapped and centered)
-        headline_words = heading.upper().split()
-        hl_lines = []
-        current_line = []
-        curr_w = 0
-        for w in headline_words:
-            w_w = fonts["anton"].getlength(w + " ")
-            if curr_w + w_w > max_width and current_line:
-                hl_lines.append(" ".join(current_line))
-                current_line = [w]
-                curr_w = w_w
-            else:
-                current_line.append(w)
-                curr_w += w_w
-        if current_line:
-            hl_lines.append(" ".join(current_line))
-            
-        hl_y = 250
-        for line in hl_lines:
-            w_len = fonts["anton"].getlength(line)
-            x_pos = (1792 - w_len) // 2
-            draw_base.text((x_pos, hl_y), line, font=fonts["anton"], fill=(1, 1, 1))
-            hl_y += 110
+        # Load the already perfectly rendered content card to use as base canvas
+        card_img_path = os.path.join(args.output_dir, f"{args.name}_{current_idx:02d}_card.jpg")
+        if os.path.exists(card_img_path):
+            base_img = Image.open(card_img_path).convert("RGB")
+        else:
+            print(f"Error: Card image {card_img_path} not found! Run generate.py first.", file=sys.stderr)
+            continue
             
         # Write frames to cv2 Writer
         print("Rendering frames...")
@@ -405,9 +444,9 @@ def main():
             for item in words_layout_data:
                 tok = item["token"]
                 font = item["font"]
-                color = item["color"]
                 x1, y1, x2, y2 = item["x1"], item["y1"], item["x2"], item["y2"]
                 timing = item["timing"]
+                ascent = item["ascent"]
                 
                 # Dynamic Highlight Sync
                 if timing and timing["start"] <= t <= timing["end"]:
@@ -420,11 +459,8 @@ def main():
                         radius=12,
                         fill=(254, 243, 199) # soft light amber (#fef3c7)
                     )
-                    # Text in bold amber
-                    draw.text((x1, y1), tok, font=font, fill=(217, 119, 6)) # (#d97706)
-                else:
-                    # Original text color from layout settings
-                    draw.text((x1, y1), tok, font=font, fill=color)
+                    # Text in bold amber, using baseline anchor ("ls") exactly like renderer.py
+                    draw.text((x1, y1 + ascent), tok, font=font, fill=(217, 119, 6), anchor="ls")
                     
             # BGR for OpenCV
             cv_frame = cv2.cvtColor(np.array(frame_img), cv2.COLOR_RGB2BGR)
@@ -440,13 +476,14 @@ def main():
             except Exception:
                 pass
                 
-        bg_music = os.path.join("music", "audio.mp3")
+        # 5. Merge Audio, Video, and Background Music
+        bg_music = "music/audio.mp3"
         if os.path.exists(bg_music):
-            print("Merging video with voiceover and background music track...")
+            # 5. Merge and Speed Up final Video + Audio
             cmd_merge = (
                 f'"{ffmpeg_path}" -y -i "{temp_video_raw}" -i "{fast_audio_path}" -i "{bg_music}" '
-                f'-filter_complex "[1:a]volume=1.0[a1];[2:a]volume=0.08[a2];[a1][a2]amix=inputs=2:duration=first[a]" '
-                f'-map 0:v -map "[a]" -c:v libx264 -pix_fmt yuv420p "{video_output}"'
+                f'-filter_complex "[0:v]setpts=PTS/1.12[v];[1:a]volume=1.0,atempo=1.12[a1];[2:a]volume=0.08[a2];[a1][a2]amix=inputs=2:duration=first[a]" '
+                f'-map "[v]" -map "[a]" -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest "{video_output}"'
             )
         else:
             print("Warning: music/audio.mp3 not found. Merging only voiceover...")
@@ -464,8 +501,7 @@ def main():
         # Clean up temp files
         try:
             os.remove(temp_video_raw)
-            os.remove(temp_audio_path)
-            os.remove(fast_audio_path)
+            # We NO LONGER delete temp_audio_path and fast_audio_path so they can be cached!
         except Exception:
             pass
             

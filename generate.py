@@ -159,7 +159,7 @@ def process_single_post(heading, body, photo_prompt, photo_path, output_dir, nam
             video.release()
             
             # Check if background music/audio is available to merge
-            audio_path = os.path.join("music", "audio.mp3")
+            audio_path = os.path.join("music", "old_audio.mp3")
             ffmpeg_path = os.path.abspath("ffmpeg.exe")
             
             if os.path.exists(audio_path) and os.path.exists(ffmpeg_path):

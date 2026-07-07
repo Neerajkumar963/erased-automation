@@ -1,0 +1,32 @@
+# MASTER FACEBOOK SCHEDULED POSTS DATABASE
+This is the exact, 100% verified snapshot directly from the Facebook API.
+
+- **08 July 2026 - 11:00 AM** | Type: `IMAGE` | ID: `1151070394753110_122116049787342312` | Caption: _At the height of his literary fame, Oscar Wilde was convicte..._
+- **09 July 2026 - 11:00 AM** | Type: `IMAGE` | ID: `1151070394753110_122116049859342312` | Caption: _Roald Dahl, the author of Charlie and the Chocolate Factory,..._
+- **10 July 2026 - 11:00 AM** | Type: `IMAGE` | ID: `1151070394753110_122116050003342312` | Caption: _Marie Curie's husband and scientific partner, Pierre Curie, ..._
+- **11 July 2026 - 11:00 AM** | Type: `IMAGE` | ID: `1151070394753110_122116050129342312` | Caption: _Sir Arthur Conan Doyle, creator of Sherlock Holmes, faced pe..._
+- **12 July 2026 - 05:37 AM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116027935342312` | Caption: _Smedley Butler retired from the US Marines in 1931 as the mo..._
+- **12 July 2026 - 11:00 AM** | Type: `IMAGE` | ID: `1151070394753110_122116050273342312` | Caption: _F. Scott Fitzgerald's marriage to Zelda Sayre was highly uns..._
+- **12 July 2026 - 01:32 PM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116028049342312` | Caption: _Unit 731 — Japan's secret WW2 biological warfare unit — cond..._
+- **12 July 2026 - 10:30 PM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116028247342312` | Caption: _From 1964 to 1992, Texaco (later Chevron) extracted oil in E..._
+- **13 July 2026 - 05:35 AM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116041201342312` | Caption: _In 1913, miners at John D. Rockefeller Jr.'s Colorado Fuel a..._
+- **13 July 2026 - 11:00 AM** | Type: `IMAGE` | ID: `1151070394753110_122116050345342312` | Caption: _When Malcolm X was six years old, his father Earl Little die..._
+- **13 July 2026 - 01:33 PM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116041429342312` | Caption: _In the 1970s, a faction within MI5 believed UK Prime Ministe..._
+- **13 July 2026 - 10:30 PM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116041549342312` | Caption: _Payday loan companies charge fees equivalent to 300-400% ann..._
+- **14 July 2026 - 05:38 AM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116041645342312` | Caption: _The Industrial Workers of the World — the Wobblies — had org..._
+- **14 July 2026 - 11:00 AM** | Type: `IMAGE` | ID: `1151070394753110_122116050621342312` | Caption: _Queen Victoria's husband, Prince Albert, died in 1861 at age..._
+- **14 July 2026 - 01:32 PM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116041753342312` | Caption: _In 1963, UK Secretary of State for War John Profumo — briefe..._
+- **14 July 2026 - 10:30 PM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116042065342312` | Caption: _Three pharmaceutical distributors — McKesson, AmerisourceBer..._
+- **15 July 2026 - 05:34 AM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116042209342312` | Caption: _On April 23, 2013, structural cracks were discovered in the ..._
+- **15 July 2026 - 11:00 AM** | Type: `IMAGE` | ID: `1151070394753110_122116050765342312` | Caption: _J.R.R. Tolkien's father died when he was four, and his mothe..._
+- **15 July 2026 - 01:36 PM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116042371342312` | Caption: _When Angola gained independence in 1975, the CIA and Soviet ..._
+- **15 July 2026 - 10:38 PM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116042497342312` | Caption: _From 1994 to 2009, the NFL ran its own concussion research c..._
+- **16 July 2026 - 05:35 AM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116029825342312` | Caption: _Carlisle Indian Industrial School was founded in 1879 with a..._
+- **16 July 2026 - 11:00 AM** | Type: `IMAGE` | ID: `1151070394753110_122116050987342312` | Caption: _Katharine Wright was the sister of Wilbur and Orville Wright..._
+- **16 July 2026 - 01:33 PM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116029951342312` | Caption: _In 1986, senior White House officials secretly sold weapons ..._
+- **16 July 2026 - 10:31 PM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116030209342312` | Caption: _Navient serviced $300 billion in student loans for 12 millio..._
+- **17 July 2026 - 05:34 AM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116030587342312` | Caption: _Between 1945 and 1963, approximately 400,000 US military per..._
+- **17 July 2026 - 11:00 AM** | Type: `IMAGE` | ID: `1151070394753110_122116051167342312` | Caption: _J. Robert Oppenheimer's partner Jean Tatlock died by suicide..._
+- **17 July 2026 - 01:33 PM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116043457342312` | Caption: _In November 1983, NATO war exercises were so realistic in si..._
+- **17 July 2026 - 10:36 PM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116030965342312` | Caption: _Pharmaceutical companies can legally extend their patent mon..._
+- **18 July 2026 - 05:35 AM** | Type: `REEL/VIDEO` | ID: `1151070394753110_122116043883342312` | Caption: _In the late 1950s, Thalidomide was marketed across Europe, C..._
