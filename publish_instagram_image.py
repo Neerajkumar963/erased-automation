@@ -32,18 +32,15 @@ def get_scheduled_post_index():
         print("Schedule has not started yet (before July 8th).")
         return None
         
-    # We expect this to run at 11 AM IST (05:30 UTC) or 7:30 PM IST (14:00 UTC)
-    # Give a wide acceptance range around these hours
-    if 10 <= current_hour <= 12:
-        print("Detected Slot: 11:00 AM IST (Morning)")
-        post_index = 4 + (days_diff * 2)
-    elif 18 <= current_hour <= 20:
-        print("Detected Slot: 7:30 PM IST (Evening)")
-        post_index = 4 + (days_diff * 2) + 1
-    else:
-        print(f"Current hour {current_hour} is not in the 11 AM or 7:30 PM IST windows.")
+    # We only expect this to run at 11 AM IST (05:30 UTC)
+    # Give a wide acceptance range around hour 11 just in case of delays
+    if not (10 <= current_hour <= 12):
+        print(f"Current hour {current_hour} is not in the 11 AM IST window. Exiting cleanly.")
         return None
         
+    # Day 0 (July 8) -> Post 4
+    # Day 1 (July 9) -> Post 5
+    post_index = 4 + days_diff
     print(f"Days since start: {days_diff}. Calculated Image Post index: {post_index}")
     
     if post_index > 13:
