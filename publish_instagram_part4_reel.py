@@ -141,8 +141,30 @@ def main():
         container_id = resp_c["id"]
         print(f"Instagram Container created successfully. ID: {container_id}")
         
-        print("Waiting 30 seconds for video processing on Instagram servers...")
-        time.sleep(30)
+        print("Waiting for video processing on Instagram servers (polling status)...")
+        status_url = f"https://graph.facebook.com/v20.0/{container_id}?fields=status_code&access_token={token}"
+        
+        is_ready = False
+        for attempt in range(30): # Wait up to 5 minutes
+            try:
+                status_resp = requests.get(status_url).json()
+                status_code = status_resp.get("status_code", "UNKNOWN")
+                print(f"  [Attempt {attempt+1}] Container status: {status_code}")
+                
+                if status_code.upper() == "FINISHED":
+                    is_ready = True
+                    break
+                elif status_code.upper() == "ERROR":
+                    print(f"Error: Instagram failed to process the video container. Response: {status_resp}", file=sys.stderr)
+                    sys.exit(1)
+            except Exception as e:
+                print(f"  Warning: Status check failed: {e}")
+                
+            time.sleep(10)
+            
+        if not is_ready:
+            print("Error: Container processing timed out after 5 minutes.", file=sys.stderr)
+            sys.exit(1)
             
         url_publish = f"https://graph.facebook.com/v20.0/{ig_id}/media_publish"
         payload_pub = {
