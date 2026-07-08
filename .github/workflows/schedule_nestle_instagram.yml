@@ -1,67 +1,51 @@
-name: Schedule Instagram & Facebook Reels
-
+name: Auto-Publisher (Master Queue)
 on:
-  repository_dispatch:
-    types: [schedule_trigger]
   schedule:
-    # Current Affairs (5:30 AM IST / 00:00 UTC) from 8 July to 29 July
-    - cron: '0 0 8-29 7 *'
-    # Old Hidden History Afternoon Slot (1:30 PM IST / 08:00 UTC) from 12 July to 18 July
-    - cron: '0 8 12-18 7 *'
-    # Old Hidden History Night Slot (10:30 PM IST / 17:00 UTC) from 12 July to 18 July
-    - cron: '0 17 12-18 7 *'
-    # Family Tragedies Part 4 (7:30 PM IST / 14:00 UTC) from 7 July to 20 July
-    - cron: '0 14 7-20 7 *'
-    # Image Slot Morning (11:00 AM IST / 05:30 UTC) from 8 July to 17 July
-    - cron: '30 5 8-17 7 *'
-  
-  workflow_dispatch: # Allows manual run via GitHub UI with custom index
-    inputs:
-      post_index:
-        description: 'Optional: Override Post Index to publish immediately (e.g. 25)'
-        required: false
-        default: ''
-      post_type:
-        description: 'Optional: Type of post (reel or image)'
-        required: false
-        default: 'reel'
+    # 5:30 AM IST (00:00 UTC) - Current Affairs
+    - cron: '00 00 * * *'
+    # 11:00 AM IST (05:30 UTC) - Family Tragedies Part 4
+    - cron: '30 05 * * *'
+    # 1:30 PM IST (08:00 UTC) - US History Part 5
+    - cron: '00 08 * * *'
+    # 7:30 PM IST (14:00 UTC) - Family Tragedies Part 4
+    - cron: '00 14 * * *'
+    # 10:30 PM IST (17:00 UTC) - US History Part 5
+    - cron: '00 17 * * *'
+  workflow_dispatch:
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
-
+  publish_post:
+    runs-on: windows-latest
+    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests beautifulsoup4
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4
 
-      - name: Run publishing script
-        env:
-          FACEBOOK_USER_ACCESS_TOKEN: ${{ secrets.FACEBOOK_USER_ACCESS_TOKEN }}
-          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
-          INSTAGRAM_BUSINESS_ACCOUNT_ID: ${{ secrets.INSTAGRAM_BUSINESS_ACCOUNT_ID }}
-          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
-        run: |
-          if [ -n "${{ github.event.inputs.post_index }}" ]; then
-            if [ "${{ github.event.inputs.post_type }}" = "image" ]; then
-              python -u publish_instagram_image.py --idx ${{ github.event.inputs.post_index }}
-            else
-              python -u publish_instagram_reel.py --idx ${{ github.event.inputs.post_index }}
-            fi
-          else
-            python -u publish_instagram_reel.py
-            python -u publish_instagram_image.py
-            python -u publish_instagram_part4_reel.py
-            python -u comment_facebook_part4_reel.py
-            python -u publish_instagram_current_affairs.py
-            python -u comment_fb_current_affairs.py
-          fi
+    - name: Run Master Publisher
+      env:
+        FACEBOOK_USER_ACCESS_TOKEN: ${{ secrets.FACEBOOK_USER_ACCESS_TOKEN }}
+        INSTAGRAM_BUSINESS_ACCOUNT_ID: ${{ secrets.INSTAGRAM_BUSINESS_ACCOUNT_ID }}
+      run: |
+        python master_publisher.py
+
+    - name: Commit Updated Master DB
+      # Only commit if the DB was updated (queue consumed)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+        git add master_monthly_schedule.json
+        git diff --staged --quiet || git commit -m "Consume published video from master queue"
+        git push
