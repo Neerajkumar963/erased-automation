@@ -101,6 +101,11 @@ def main():
         
     print(f"Target Queue for this hour: {queue_name}")
     
+    # User Rule: Do not start posting CIA Declassified on Instagram until July 12
+    if queue_name == "cia_declassified" and ist_now.date() < datetime(2026, 7, 12).date():
+        print("Not July 12 yet. Holding the CIA Declassified queue.")
+        return
+    
     db_path = "master_monthly_schedule.json"
     with open(db_path, "r", encoding="utf-8") as f:
         db = json.load(f)
