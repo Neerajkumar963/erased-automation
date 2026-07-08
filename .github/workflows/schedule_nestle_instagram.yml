@@ -5,11 +5,11 @@ on:
     - cron: '00 00 * * *'
     # 11:00 AM IST (05:30 UTC) - Family Tragedies Part 4
     - cron: '30 05 * * *'
-    # 1:30 PM IST (08:00 UTC) - US History Part 5
+    # 1:30 PM IST (08:00 UTC) - CIA Declassified
     - cron: '00 08 * * *'
     # 7:30 PM IST (14:00 UTC) - Family Tragedies Part 4
     - cron: '00 14 * * *'
-    # 10:30 PM IST (17:00 UTC) - US History Part 5
+    # 10:30 PM IST (17:00 UTC) - CIA Declassified
     - cron: '00 17 * * *'
   workflow_dispatch:
 

@@ -21,9 +21,9 @@ def get_queue_for_current_time():
     
     if hour == 5: return "current_affairs"
     if hour == 11: return "family_tragedies"
-    if hour == 13: return "us_history"
+    if hour == 13: return "cia_declassified"
     if hour == 19: return "family_tragedies"
-    if hour == 22: return "us_history"
+    if hour == 22: return "cia_declassified"
     
     return None
 
