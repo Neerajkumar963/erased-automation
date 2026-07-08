@@ -56,8 +56,25 @@ This project manages an automated content pipeline for historical videos/shorts 
   - **Sleek Highlights (No Blocky Bricks):** Never highlight a long chunk of text (e.g., a 5-word organization name). Keep highlights sleek and sharp (MAX 1-3 words per highlight). If a name is long, highlight only its core/identifying words.
   - **Avoid Vertical Color Stacking:** NEVER put the same color on consecutive lines directly under each other (e.g., Orange on line 1, and another Orange on line 2 right below it). Alternate the styles (Orange -> Bold -> Red -> Orange) to create a true scattered "confetti" look, not vertical stripes.
   - **Zero Dead Zones (Character Count Density):** Do not count words to find gaps; count *characters*. There MUST NEVER be a gap of more than ~60 to 80 characters of plain text. If a gap exceeds 60-80 characters, the AI MUST forcefully find key phrases in that zone and add Bold or Color to ensure a premium reading rhythm, even if it splits a long sentence.
+  
+## 6. Strict Caption Formatting (Instagram/Facebook)
+- **Format Structure:** The caption for ANY video (Family Tragedies, Current Affairs, etc.) MUST strictly follow this exact template with dot-spacers to push tags down:
+  ```
+  [Short Hook / Topic]...
+  .
+  .
+  @erased.record
+  #Hashtag1 #Hashtag2 #Hashtag3
+  ```
+- **Example:**
+  `February 14, 1884: The darkest day of Theodore Roosevelt's life. The tragic truth history forgot...`
+  `.`
+  `.`
+  `@erased.record`
+  `#HiddenHistory #TheodoreRoosevelt #TrueFacts`
+- **NEVER** put detailed paragraphs in the caption for short-form content unless explicitly asked. Emojis are STRICTLY BANNED.
 
-## 6. Session & Conversation Logs (Permanent Context)
+## 7. Session & Conversation Logs (Permanent Context)
 - **July 6, 2026 - Current Affairs Batch Failure & Correction:** The AI Assistant attempted to use a Python regex script (`build_json.py`) to automatically apply the 5 Ultimate Formatting Rules to 22 long posts. The script failed miserably, breaking markdown brackets and creating massive dead zones. The user was highly frustrated and commanded the AI to stop the batch generation immediately. The AI deleted the corrupted files and manually formatted all 22 posts perfectly in 4 phases. **Short version:** `python pipeline.py 5` bhi kaam karega — `$env:` wala prefix optional hai.
 - **July 6, 2026 - ElevenLabs Quota Check & New Key:** The user asked to check the ElevenLabs API character quota. The original API key (`sk_a4c...`) had exactly 20 characters left out of 10,000 (Free Tier exhausted). The user then added a fresh API key (`sk_780f...`) to `.env`. Checked the new key; it has a full 10,000 characters remaining.
 - **July 6, 2026 - Voiceover Script Review & Execution:** The user requested a review of the pre-existing `generate_voiceover.py` script. The script takes the JSON batch, strips markdown tags for text-to-speech, hits the ElevenLabs API for audio + timestamps, renders a dynamic video with highlights using OpenCV, merges audio with FFmpeg, and uploads to Dropbox. The AI confirmed it is fully functional and ready to use the new API key. **Action:** Executed `generate_voiceover.py` specifically for Post 1 using the newly configured API key.

@@ -27,7 +27,7 @@ def get_caption_from_html(html_path, post_index):
         return None
         
     card = cards[post_index]
-    caption_div = card.find('div', class_='sc')
+    caption_div = card.find('div', class_='pinned_comment')
     
     for br in caption_div.find_all('br'):
         br.replace_with('\n')

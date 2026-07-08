@@ -17,20 +17,77 @@ def load_env(env_path=".env"):
                         key, val = line.split("=", 1)
                         os.environ[key.strip()] = val.strip().strip('"').strip("'")
 
-def upload_to_tmpfiles(file_path):
-    print(f"Uploading {file_path} to tmpfiles.org...")
-    url = "https://tmpfiles.org/api/v1/upload"
-    try:
-        with open(file_path, "rb") as f:
-            files = {"file": f}
-            resp = requests.post(url, files=files).json()
-            if resp.get("status") == "success":
-                link = resp["data"]["url"]
-                dl_link = link.replace("https://tmpfiles.org/", "https://tmpfiles.org/dl/")
-                return dl_link
-    except Exception as e:
-        print(f"Error uploading {file_path}: {e}", file=sys.stderr)
-    return None
+def get_dropbox_access_token(app_key, app_secret, refresh_token):
+    print("Getting a fresh access token from Dropbox...")
+    url = "https://api.dropboxapi.com/oauth2/token"
+    data = {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token
+    }
+    resp = requests.post(url, data=data, auth=(app_key, app_secret))
+    resp.raise_for_status()
+    return resp.json()["access_token"]
+
+def upload_to_dropbox(file_path, dbx_path, access_token):
+    print(f"Uploading {file_path} to Dropbox {dbx_path}...")
+    url = "https://content.dropboxapi.com/2/files/upload"
+    
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Dropbox-API-Arg": json.dumps({
+            "path": dbx_path,
+            "mode": "overwrite",
+            "autorename": False,
+            "mute": False,
+            "strict_conflict": False
+        }),
+        "Content-Type": "application/octet-stream"
+    }
+    
+    with open(file_path, "rb") as f:
+        file_data = f.read()
+        
+    resp = requests.post(url, headers=headers, data=file_data)
+    if resp.status_code != 200:
+        print("Dropbox upload failed with response:", resp.status_code, resp.text)
+    resp.raise_for_status()
+    return resp.json()
+
+def get_or_create_shared_link(dbx_path, access_token):
+    print(f"Creating shared link for {dbx_path}...")
+    url = "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "path": dbx_path,
+        "settings": {
+            "requested_visibility": "public"
+        }
+    }
+    
+    resp = requests.post(url, headers=headers, json=payload)
+    if resp.status_code == 200:
+        link_url = resp.json()["url"]
+        return link_url.replace("?dl=0", "&raw=1") if "?dl=0" in link_url else link_url + "&raw=1"
+    else:
+        error_data = resp.json()
+        error_summary = error_data.get("error_summary", "")
+        if "shared_link_already_exists" in error_summary or resp.status_code == 409:
+            print("Shared link already exists. Fetching existing link...")
+            url_list = "https://api.dropboxapi.com/2/sharing/list_shared_links"
+            payload_list = {
+                "path": dbx_path,
+                "direct_only": True
+            }
+            resp_list = requests.post(url_list, headers=headers, json=payload_list)
+            resp_list.raise_for_status()
+            links = resp_list.json().get("links", [])
+            if links:
+                link_url = links[0]["url"]
+                return link_url.replace("?dl=0", "&raw=1") if "?dl=0" in link_url else link_url + "&raw=1"
+        resp.raise_for_status()
 
 def get_current_affairs_index():
     ist_now = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
@@ -100,12 +157,27 @@ def main():
     
     print(f"\n==================== [Publishing {target_key} to Instagram] ====================")
     
-    # 1. Upload assets to tmpfiles for public URLs
-    video_url = upload_to_tmpfiles(post_data["video_path"])
-    thumb_url = upload_to_tmpfiles(post_data["thumb_path"])
+    app_key = os.environ.get("DROPBOX_APP_KEY")
+    app_secret = os.environ.get("DROPBOX_APP_SECRET")
+    refresh_token = os.environ.get("DROPBOX_REFRESH_TOKEN")
+    
+    if not app_key or not app_secret or not refresh_token:
+        print("Error: Missing Dropbox credentials in .env", file=sys.stderr)
+        sys.exit(1)
+        
+    access_token = get_dropbox_access_token(app_key, app_secret, refresh_token)
+    
+    dbx_video_path = f"/current_affairs/{target_key}_video.mp4"
+    dbx_thumb_path = f"/current_affairs/{target_key}_thumb.jpg"
+    
+    upload_to_dropbox(post_data["video_path"], dbx_video_path, access_token)
+    upload_to_dropbox(post_data["thumb_path"], dbx_thumb_path, access_token)
+    
+    video_url = get_or_create_shared_link(dbx_video_path, access_token)
+    thumb_url = get_or_create_shared_link(dbx_thumb_path, access_token)
     
     if not video_url or not thumb_url:
-        print("Error: Failed to upload assets to tmpfiles.", file=sys.stderr)
+        print("Error: Failed to generate Dropbox links.", file=sys.stderr)
         sys.exit(1)
         
     # 2. Instagram Container API

@@ -28,11 +28,18 @@ def get_caption_from_html(html_path, post_index):
         
     card = cards[post_index]
     caption_div = card.find('div', class_='sc')
-    
     for br in caption_div.find_all('br'):
         br.replace_with('\n')
+    hook_caption = caption_div.text.strip()
+    
+    pinned_div = card.find('div', class_='pinned_comment')
+    pinned_text = ""
+    if pinned_div:
+        for br in pinned_div.find_all('br'):
+            br.replace_with('\n')
+        pinned_text = pinned_div.text.strip()
         
-    return caption_div.text.strip()
+    return hook_caption, pinned_text
 
 def get_scheduled_post_index():
     ist_now = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
@@ -109,7 +116,7 @@ def main():
         
     target_key = video_keys[target_idx]
     video_url = links_db[target_key]
-    caption = get_caption_from_html(html_path, target_idx)
+    caption, pinned_comment_text = get_caption_from_html(html_path, target_idx)
     
     if not caption:
         print(f"Error: Could not extract caption for index {target_idx} from {html_path}", file=sys.stderr)
@@ -182,11 +189,11 @@ def main():
             print(f"\nSUCCESS! Reel is now live on Instagram! Post ID: {media_id}")
             
             # --- ADDING COMMENT ---
-            print("\n-------------------- [Adding Caption as Comment] --------------------")
+            print("\n-------------------- [Adding Pinned Comment] --------------------")
             url_comment = f"https://graph.facebook.com/v20.0/{media_id}/comments"
             payload_comment = {
                 "access_token": token,
-                "message": caption
+                "message": pinned_comment_text
             }
             
             try:

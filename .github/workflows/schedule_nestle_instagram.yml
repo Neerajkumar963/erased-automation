@@ -4,16 +4,16 @@ on:
   repository_dispatch:
     types: [schedule_trigger]
   schedule:
-    # Morning Slot (5:30 AM IST / 00:00 UTC) from 12 July to 18 July
-    - cron: '0 0 12-18 7 *'
-    # Afternoon Slot (1:30 PM IST / 08:00 UTC) from 12 July to 18 July
+    # Current Affairs (5:30 AM IST / 00:00 UTC) from 8 July to 29 July
+    - cron: '0 0 8-29 7 *'
+    # Old Hidden History Afternoon Slot (1:30 PM IST / 08:00 UTC) from 12 July to 18 July
     - cron: '0 8 12-18 7 *'
-    # Night Slot (10:30 PM IST / 17:00 UTC) from 12 July to 18 July
+    # Old Hidden History Night Slot (10:30 PM IST / 17:00 UTC) from 12 July to 18 July
     - cron: '0 17 12-18 7 *'
+    # Family Tragedies Part 4 (7:30 PM IST / 14:00 UTC) from 7 July to 20 July
+    - cron: '0 14 7-20 7 *'
     # Image Slot Morning (11:00 AM IST / 05:30 UTC) from 8 July to 17 July
     - cron: '30 5 8-17 7 *'
-    # Image Slot Evening (7:30 PM IST / 14:00 UTC) from 8 July to 17 July
-    - cron: '0 14 8-17 7 *'
   
   workflow_dispatch: # Allows manual run via GitHub UI with custom index
     inputs:
