@@ -62,4 +62,6 @@ jobs:
             python -u publish_instagram_image.py
             python -u publish_instagram_part4_reel.py
             python -u comment_facebook_part4_reel.py
+            python -u publish_instagram_current_affairs.py
+            python -u comment_fb_current_affairs.py
           fi
