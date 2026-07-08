@@ -157,27 +157,11 @@ def main():
     
     print(f"\n==================== [Publishing {target_key} to Instagram] ====================")
     
-    app_key = os.environ.get("DROPBOX_APP_KEY")
-    app_secret = os.environ.get("DROPBOX_APP_SECRET")
-    refresh_token = os.environ.get("DROPBOX_REFRESH_TOKEN")
-    
-    if not app_key or not app_secret or not refresh_token:
-        print("Error: Missing Dropbox credentials in .env", file=sys.stderr)
-        sys.exit(1)
-        
-    access_token = get_dropbox_access_token(app_key, app_secret, refresh_token)
-    
-    dbx_video_path = f"/current_affairs/{target_key}_video.mp4"
-    dbx_thumb_path = f"/current_affairs/{target_key}_thumb.jpg"
-    
-    upload_to_dropbox(post_data["video_path"], dbx_video_path, access_token)
-    upload_to_dropbox(post_data["thumb_path"], dbx_thumb_path, access_token)
-    
-    video_url = get_or_create_shared_link(dbx_video_path, access_token)
-    thumb_url = get_or_create_shared_link(dbx_thumb_path, access_token)
+    video_url = post_data.get("video_url")
+    thumb_url = post_data.get("thumb_url")
     
     if not video_url or not thumb_url:
-        print("Error: Failed to generate Dropbox links.", file=sys.stderr)
+        print("Error: video_url or thumb_url not found in JSON. Did the bulk uploader fail?", file=sys.stderr)
         sys.exit(1)
         
     # 2. Instagram Container API
