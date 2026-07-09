@@ -16,6 +16,8 @@ on:
     # 10:30 PM IST (17:00 UTC) - CIA Declassified
     - cron: '00 17 * * *'
   workflow_dispatch:
+  repository_dispatch:
+    types: [schedule_trigger]
 
 jobs:
   publish_post:
